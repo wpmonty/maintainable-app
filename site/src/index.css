@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #0a0a0f;
+    color: #f3f4f6;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@utility gradient-text {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(to right, #34d399, #60a5fa, #a78bfa);
+}
+
+@utility gradient-text-warm {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(to right, #fbbf24, #f59e0b, #ef4444);
+}
+
+@utility glow-green {
+  box-shadow: 0 0 60px rgba(52, 211, 153, 0.12), 0 0 120px rgba(52, 211, 153, 0.04);
+}
