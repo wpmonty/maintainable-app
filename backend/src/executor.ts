@@ -39,7 +39,7 @@ export function executeIntents(
         results.push({ action: 'query', success: true, detail: intent.question });
         break;
       case 'greeting':
-        results.push({ action: 'greeting', success: true, detail: 'Greeting acknowledged' });
+        results.push({ action: 'greeting', success: true, detail: 'User greeted the assistant — respond warmly and mention habits if relevant' });
         break;
       case 'help':
         results.push({ action: 'help', success: true, detail: 'Help requested' });
@@ -187,11 +187,20 @@ function execCheckin(db: Database.Database, userId: string, intent: CheckinInten
     const value = entry.value ?? null;
     const done = entry.status === 'skip' ? 0 : 1;
 
+    // UPSERT check-in: accumulate numeric values, last-write-wins for status
     db.prepare(`
       INSERT INTO checkins (user_id, habit_id, date, value, status, done, note)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id, habit_id, date)
-      DO UPDATE SET value = excluded.value, status = excluded.status, done = excluded.done, note = excluded.note
+      DO UPDATE SET 
+        value = CASE 
+          WHEN excluded.value IS NOT NULL AND checkins.value IS NOT NULL 
+          THEN COALESCE(checkins.value, 0) + excluded.value
+          ELSE COALESCE(excluded.value, checkins.value)
+        END,
+        status = excluded.status, 
+        done = excluded.done, 
+        note = excluded.note
     `).run(userId, habit.id, date, value, entry.status, done, entry.note ?? null);
 
     // Update user's last check-in timestamp

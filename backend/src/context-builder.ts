@@ -61,6 +61,20 @@ export function buildStructuredContext(
     sections.push(`TODAY'S CHECK-IN:\n  No check-ins recorded yet today.`);
   }
 
+  // HABITS NOT YET CHECKED IN TODAY (for query intent completeness)
+  const isQueryAction = executionResults.some(r => r.action === 'query');
+  if (isQueryAction) {
+    const checkedInHabitIds = new Set(todayCheckins.map(c => c.habit_id));
+    const uncheckedHabits = habits.filter(h => !checkedInHabitIds.has(h.id));
+    
+    if (uncheckedHabits.length > 0) {
+      const uncheckedLines = uncheckedHabits.map(h => 
+        `  ${h.name}${h.goal ? ` (goal: ${h.goal}${h.unit ? ' ' + h.unit : ''})` : ''}`
+      );
+      sections.push(`HABITS NOT YET CHECKED IN TODAY:\n${uncheckedLines.join('\n')}`);
+    }
+  }
+
   // THIS WEEK
   if (weekCheckins.length > 0) {
     const byHabit: Record<string, Array<{ date: string; value: number | null; done: number | null; goal: number | null }>> = {};
