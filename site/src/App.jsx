@@ -1,4 +1,5 @@
 import './index.css'
+import React from 'react'
 
 function Nav() {
   return (
@@ -10,12 +11,45 @@ function Nav() {
             <a key={l} href={`#${l.toLowerCase().replace(/\s/g, '-')}`} className="hover:text-white transition-colors">{l}</a>
           ))}
         </div>
-        <a href="mailto:habits@maintainable.app" className="text-sm px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
-          Start Free →
-        </a>
+        <EmailCopyButton small />
       </div>
     </nav>
   )
+}
+
+function EmailCopyButton({ small }) {
+  const [copied, setCopied] = React.useState(false);
+  const email = 'hello@maintainable.app';
+  
+  const copyEmail = () => {
+    navigator.clipboard.writeText(email);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  if (small) {
+    return (
+      <button
+        onClick={copyEmail}
+        className="text-sm px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-2"
+      >
+        <span className="text-emerald-400 font-mono">{email}</span>
+        <span>{copied ? '✓' : '📋'}</span>
+      </button>
+    );
+  }
+  
+  return (
+    <div className="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+      <span className="text-xl md:text-2xl font-mono text-emerald-400 select-all">{email}</span>
+      <button
+        onClick={copyEmail}
+        className="px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-sm font-medium transition-all"
+      >
+        {copied ? '✓ Copied!' : '📋 Copy'}
+      </button>
+    </div>
+  );
 }
 
 function Hero() {
@@ -30,18 +64,15 @@ function Hero() {
           <span className="gradient-text">with email</span>
         </h1>
         <p className="text-lg md:text-xl text-gray-400 max-w-xl mx-auto mb-10 leading-relaxed">
-          Email your daily check-in. Get encouragement, patterns, and accountability
+          Just send an email to get started. Get encouragement, patterns, and accountability
           from an AI that remembers every day — not just today.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="mailto:habits@maintainable.app?subject=Day 1&body=water 6 glasses, walked 20 min, took vitamins" className="px-8 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 font-medium hover:opacity-90 transition-opacity">
-            Send Your First Check-In
-          </a>
-          <a href="#how-it-works" className="px-8 py-3 rounded-full border border-white/10 text-gray-300 hover:bg-white/5 transition-colors">
-            See How It Works
-          </a>
+        
+        <div className="mb-10">
+          <EmailCopyButton />
         </div>
-        <p className="text-xs text-gray-600 mt-6">Free to try. No account needed. Just send an email.</p>
+        
+        <p className="text-sm text-gray-500">Free to try. No account needed. Just send an email.</p>
       </div>
     </section>
   )
@@ -222,10 +253,9 @@ function CTA() {
     <section className="py-24 px-6">
       <div className="max-w-2xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to start?</h2>
-        <p className="text-gray-400 mb-8 max-w-md mx-auto">Send your first check-in right now. No signup. No app. Just email what you did today.</p>
-        <a href="mailto:habits@maintainable.app?subject=Day 1&body=Here's what I did today:" className="inline-block px-8 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 font-medium hover:opacity-90 transition-opacity">
-          Email Your First Check-In →
-        </a>
+        <p className="text-gray-400 mb-4">Just send an email to get started.</p>
+        <p className="text-gray-500 text-sm mb-8">No signup. No app. Tell us what habits you want to track.</p>
+        <EmailCopyButton />
       </div>
     </section>
   )
@@ -239,11 +269,44 @@ function Footer() {
         <div className="flex gap-6 text-sm text-gray-500">
           <a href="#" className="hover:text-gray-300 transition-colors">Privacy</a>
           <a href="#" className="hover:text-gray-300 transition-colors">Terms</a>
-          <a href="mailto:hello@maintainable.app" className="hover:text-gray-300 transition-colors">Contact</a>
+          <span className="text-gray-600">hello@maintainable.app</span>
         </div>
       </div>
     </footer>
   )
+}
+
+function FloatingCTA() {
+  const [visible, setVisible] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setVisible(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  if (!visible) return null;
+  
+  const copyEmail = () => {
+    navigator.clipboard.writeText('hello@maintainable.app');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  return (
+    <div className="fixed bottom-6 right-6 z-50 animate-fade-in">
+      <button
+        onClick={copyEmail}
+        className="flex items-center gap-2 px-5 py-3 rounded-full bg-[#0a0a0f]/95 backdrop-blur-xl border border-emerald-500/30 shadow-2xl hover:border-emerald-500/50 transition-colors"
+      >
+        <span className="text-sm font-mono text-emerald-400">hello@maintainable.app</span>
+        <span className="text-xs text-emerald-300">{copied ? '✓' : '📋'}</span>
+      </button>
+    </div>
+  );
 }
 
 export default function App() {
@@ -259,6 +322,7 @@ export default function App() {
       <FAQ />
       <CTA />
       <Footer />
+      <FloatingCTA />
     </div>
   )
 }

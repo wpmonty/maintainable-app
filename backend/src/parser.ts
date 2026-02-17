@@ -11,6 +11,20 @@ Rules:
   - "some water", "a little water", "water 3" (under goal) → status: "partial", value if given
   - "skipped water", "no water", "didn't drink water" → status: "skip"
   - "did pullups", "took vitamins" (no number, affirmative) → status: "full"
+
+NEGATION PATTERNS (CRITICAL):
+- "No X" → create ONE entry: { habit: "X", status: "skip" }
+- "No X or Y" / "No X and Y" → create entries for EACH: [{ habit: "X", status: "skip" }, { habit: "Y", status: "skip" }]
+- "No X, but good otherwise" / "No X or Y, but everything else" → 
+  * Create SKIP entries for the explicitly negated habits (X, Y)
+  * Create FULL entries for ALL other habits the user tracks (requires userHabits context)
+  * Example: user tracks [water, pullups, vitamins], message "No pullups, good otherwise" → 
+    [{ habit: "pullups", status: "skip" }, { habit: "water", status: "full" }, { habit: "vitamins", status: "full" }]
+- "Everything but X" / "All good except X" → 
+  * Create SKIP entry for X
+  * Create FULL entries for all other habits in userHabits
+- "Everything" / "All good" / "All done" → create FULL entries for ALL habits in userHabits
+
 - Notes: extra context like "back hurts", "felt great", "rough day" goes in the "note" field of the check-in entry, NOT as a separate intent.
 - "skip", "off day", or content-free messages = { "intents": [{ "type": "greeting" }] }
 - "what can you do?", "how does this work?", "help" = { "type": "help" }
@@ -61,15 +75,25 @@ export async function parseIntents(
   // Build system prompt with user's habit context if available
   let systemPrompt = PARSER_SYSTEM_PROMPT;
   if (opts?.userHabits?.length) {
-    systemPrompt += `\n\nThis user's current active habits are: ${opts.userHabits.join(', ')}
-When the user says "all good", "everything", or "all done" — it means ALL of these habits are status "full".
-When they say "everything but X" or "everything except X" — all habits are "full" EXCEPT X which is "skip".
-Always return entries for ALL known habits when the user gives a blanket statement.`;
+    systemPrompt += `\n\n=== USER'S ACTIVE HABITS ===
+${opts.userHabits.join(', ')}
+
+EXPANSION RULES (use the habits list above):
+- "all good" / "everything" / "all done" → create FULL entries for EVERY habit listed above
+- "everything but X" / "everything except X" / "all good except X" → FULL for all habits EXCEPT X (X gets SKIP)
+- "No X or Y, but good otherwise" / "No X, everything else good" → SKIP for X and Y, FULL for all other habits
+- "good otherwise" / "rest is good" → when combined with negations, expand to FULL for all non-negated habits
+
+When you see these patterns, YOU MUST generate an entry for EACH habit in the list. Do not leave any out.`;
   }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
   const res = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: controller.signal,
     body: JSON.stringify({
       model,
       messages: [
@@ -81,6 +105,7 @@ Always return entries for ALL known habits when the user gives a blanket stateme
       options: { temperature: 0 },
     }),
   });
+  clearTimeout(timeout);
 
   if (!res.ok) {
     throw new Error(`Ollama error ${res.status}: ${await res.text()}`);

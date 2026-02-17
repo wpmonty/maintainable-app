@@ -56,14 +56,6 @@ export function buildStructuredContext(
       return `  ${c.habit_name}: ${valueStr} [${status}]${goalStr}`;
     });
 
-    // Show habits not reported today
-    const reportedHabits = new Set(todayCheckins.map(c => c.habit_name));
-    for (const h of habits) {
-      if (!reportedHabits.has(h.name)) {
-        lines.push(`  ${h.name}: (not reported)`);
-      }
-    }
-
     sections.push(`TODAY'S CHECK-IN:\n${lines.join('\n')}`);
   } else {
     sections.push(`TODAY'S CHECK-IN:\n  No check-ins recorded yet today.`);

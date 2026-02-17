@@ -10,7 +10,14 @@
     "test:pipeline": "tsx src/test-pipeline.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0"
+    "@types/express": "^5.0.6",
+    "@types/mailparser": "^3.4.6",
+    "@types/nodemailer": "^7.0.10",
+    "better-sqlite3": "^11.0.0",
+    "express": "^5.2.1",
+    "imap-simple": "^5.1.0",
+    "mailparser": "^3.9.3",
+    "nodemailer": "^8.0.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",

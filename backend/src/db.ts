@@ -23,7 +23,6 @@ function migrate(db: Database.Database) {
       email TEXT NOT NULL UNIQUE,
       display_name TEXT,
       tier TEXT NOT NULL DEFAULT 'free',
-      credits_remaining INTEGER NOT NULL DEFAULT 5,
       preferences TEXT DEFAULT '{}',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       last_checkin_at TEXT
