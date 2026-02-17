@@ -1,0 +1,168 @@
+import type { ParseResult, Intent } from './types.js';
+
+const PARSER_SYSTEM_PROMPT = `You are an intent parser for a habit tracking service. Given a user's email, extract ALL intents as structured JSON.
+
+Rules:
+- A single message can contain MULTIPLE intents. Extract all of them.
+- Check-in values should be parsed as numbers when possible.
+- Habit names should be normalized to lowercase singular form.
+- Each check-in entry has a STATUS field: "full" (did it fully/met goal), "partial" (did some but not full), or "skip" (didn't do it).
+  - "water 8" with goal 8 → status: "full", value: 8
+  - "some water", "a little water", "water 3" (under goal) → status: "partial", value if given
+  - "skipped water", "no water", "didn't drink water" → status: "skip"
+  - "did pullups", "took vitamins" (no number, affirmative) → status: "full"
+- Notes: extra context like "back hurts", "felt great", "rough day" goes in the "note" field of the check-in entry, NOT as a separate intent.
+- "skip", "off day", or content-free messages = { "intents": [{ "type": "greeting" }] }
+- "what can you do?", "how does this work?", "help" = { "type": "help" }
+- Extra context after a check-in like "back hurts" or "felt great" is a NOTE on the check-in, not a separate query
+- Unknown/ambiguous text = { "type": "query", "question": "<original text>" }
+- For "add"/"track"/"start" + habit name = add_habit intent.
+- For "drop"/"stop"/"remove" + habit name = remove_habit intent.
+- For "change goal"/"set target" = update_habit intent.
+- For "how am I doing", "stats", "progress", "trend" = query intent.
+
+Intent types: checkin, add_habit, remove_habit, update_habit, query, greeting, help, settings
+
+Output ONLY valid JSON matching this schema:
+{
+  "intents": [
+    // checkin: { "type": "checkin", "entries": [{ "habit": "water", "status": "full", "value": 8, "unit": "glasses", "note": "optional" }] }
+    // add_habit: { "type": "add_habit", "habits": [{ "name": "meditation", "unit": null, "goal": null }] }
+    // remove_habit: { "type": "remove_habit", "habits": ["vitamins"] }
+    // update_habit: { "type": "update_habit", "habit": "water", "goal": 10 }
+    // query: { "type": "query", "scope": "week", "question": "how am I doing?" }
+    // greeting: { "type": "greeting" }
+    // help: { "type": "help" }
+  ]
+}
+
+Output ONLY the JSON object. No markdown, no explanation, no code fences.`;
+
+export interface ParserOptions {
+  model?: string;
+  baseUrl?: string;
+  userHabits?: string[];  // user's active habit names for context
+}
+
+const DEFAULTS = {
+  model: 'llama3.1:8b',
+  baseUrl: 'http://localhost:11434',
+};
+
+export async function parseIntents(
+  emailBody: string,
+  opts?: ParserOptions
+): Promise<{ result: ParseResult; latencyMs: number }> {
+  const model = opts?.model ?? DEFAULTS.model;
+  const baseUrl = opts?.baseUrl ?? DEFAULTS.baseUrl;
+
+  const start = Date.now();
+
+  // Build system prompt with user's habit context if available
+  let systemPrompt = PARSER_SYSTEM_PROMPT;
+  if (opts?.userHabits?.length) {
+    systemPrompt += `\n\nThis user's current active habits are: ${opts.userHabits.join(', ')}
+When the user says "all good", "everything", or "all done" — it means ALL of these habits are status "full".
+When they say "everything but X" or "everything except X" — all habits are "full" EXCEPT X which is "skip".
+Always return entries for ALL known habits when the user gives a blanket statement.`;
+  }
+
+  const res = await fetch(`${baseUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: emailBody },
+      ],
+      stream: false,
+      format: 'json',
+      options: { temperature: 0 },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Ollama error ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json() as { message: { content: string } };
+  const latencyMs = Date.now() - start;
+  const raw = data.message.content.trim();
+
+  // Parse and validate
+  let parsed: ParseResult;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    // Try to extract JSON from possible markdown fences
+    const match = raw.match(/```(?:json)?\s*([\s\S]*?)```/) || raw.match(/(\{[\s\S]*\})/);
+    if (match) {
+      parsed = JSON.parse(match[1].trim());
+    } else {
+      throw new Error(`Failed to parse LLM output as JSON: ${raw.slice(0, 200)}`);
+    }
+  }
+
+  // Ensure intents array exists
+  if (!parsed.intents || !Array.isArray(parsed.intents)) {
+    // Maybe the model returned a single intent at top level
+    if ('type' in parsed) {
+      parsed = { intents: [parsed as unknown as Intent] };
+    } else {
+      parsed = { intents: [{ type: 'greeting' }] };
+    }
+  }
+
+  // Absorb invented "note" type into the last checkin entry
+  const noteIntent = parsed.intents.find((i: any) => i.type === 'note');
+  if (noteIntent && 'text' in noteIntent) {
+    const checkin = parsed.intents.find(i => i.type === 'checkin');
+    if (checkin && checkin.type === 'checkin' && checkin.entries.length > 0) {
+      checkin.entries[checkin.entries.length - 1].note = (noteIntent as any).text;
+    }
+    parsed.intents = parsed.intents.filter((i: any) => i.type !== 'note');
+  }
+
+  // Merge multiple checkin intents into one
+  const checkins = parsed.intents.filter(i => i.type === 'checkin');
+  if (checkins.length > 1) {
+    const merged = { type: 'checkin' as const, entries: checkins.flatMap(c => c.type === 'checkin' ? c.entries : []) };
+    parsed.intents = [merged, ...parsed.intents.filter(i => i.type !== 'checkin')];
+  }
+
+  // Normalize habit names in all intents
+  for (const intent of parsed.intents) {
+    if (intent.type === 'checkin') {
+      for (const entry of intent.entries ?? []) {
+        entry.habit = entry.habit?.toLowerCase().trim();
+        // Normalize status — default to "full" if not provided
+        if (!entry.status || !['full', 'partial', 'skip'].includes(entry.status)) {
+          // Infer from legacy done/value fields or default
+          if ((entry as any).done === false || entry.status === 'skip') {
+            entry.status = 'skip';
+          } else if (entry.value !== undefined) {
+            entry.status = entry.status === 'partial' ? 'partial' : 'full';
+          } else {
+            entry.status = 'full';
+          }
+        }
+        // Clean up legacy field
+        delete (entry as any).done;
+      }
+    }
+    if (intent.type === 'add_habit') {
+      for (const h of intent.habits ?? []) {
+        h.name = h.name?.toLowerCase().trim();
+      }
+    }
+    if (intent.type === 'remove_habit') {
+      intent.habits = intent.habits?.map((h: string) => h.toLowerCase().trim()) ?? [];
+    }
+    if (intent.type === 'update_habit') {
+      intent.habit = intent.habit?.toLowerCase().trim();
+    }
+  }
+
+  return { result: parsed, latencyMs };
+}
