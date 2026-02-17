@@ -190,32 +190,17 @@ function SocialProof() {
   )
 }
 
-const TIERS = [
-  { name: 'Free', credits: '5 check-ins', price: '$0', per: 'Try it out', highlight: false, cta: 'Start Free' },
-  { name: 'Monthly', credits: '30 check-ins', price: '$3', per: '$0.10/check-in', highlight: true, cta: 'Get Started' },
-  { name: 'Yearly', credits: '365 check-ins', price: '$25', per: '$0.07/check-in', highlight: false, cta: 'Best Value' },
-]
-
 function Pricing() {
   return (
     <section id="pricing" className="py-24 px-6 bg-white/[0.01]">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Simple pricing</h2>
-        <p className="text-gray-400 text-center mb-4 max-w-lg mx-auto">Pay for check-ins, not subscriptions you forget to cancel.</p>
-        <p className="text-sm text-gray-500 text-center mb-16">Crypto accepted. No credit card required.</p>
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {TIERS.map(t => (
-            <div key={t.name} className={`p-8 rounded-2xl border ${t.highlight ? 'border-emerald-500/30 bg-emerald-500/[0.03] glow-green' : 'border-white/5 bg-white/[0.02]'} flex flex-col`}>
-              <h3 className="text-lg font-semibold mb-1">{t.name}</h3>
-              <p className="text-sm text-gray-400 mb-6">{t.credits}</p>
-              <div className="text-4xl font-bold mb-1">{t.price}</div>
-              <p className="text-xs text-gray-500 mb-8">{t.per}</p>
-              <button className={`mt-auto w-full py-3 rounded-full text-sm font-medium transition-colors ${t.highlight ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90' : 'bg-white/10 hover:bg-white/20'}`}>
-                {t.cta}
-              </button>
-            </div>
-          ))}
+      <div className="max-w-2xl mx-auto text-center">
+        <div className="inline-block px-4 py-1.5 mb-6 text-sm font-medium rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          🎉 Free during beta
         </div>
+        <h2 className="text-3xl md:text-4xl font-bold mb-4">Try it free</h2>
+        <p className="text-gray-400 mb-8 max-w-lg mx-auto">We're in early beta. Everything is free while we build. Just send an email and start tracking.</p>
+        <EmailCopyButton />
+        <p className="text-sm text-gray-500 mt-8">Paid plans coming soon — early users will get priority pricing.</p>
       </div>
     </section>
   )
@@ -227,7 +212,7 @@ const FAQS = [
   { q: 'What if I miss a day?', a: "Nothing happens. No broken streak, no guilt notification. Just email when you're ready. The AI will gently acknowledge the gap." },
   { q: 'Can I track anything?', a: "Anything you can describe in an email. Water, exercise, medication, reading, meditation, gratitude — you define your habits, not us." },
   { q: 'How fast are responses?', a: 'Usually under 30 seconds. You send an email, and a thoughtful reply lands in your inbox before you put your phone down.' },
-  { q: 'Is it private?', a: "No account, no profile, no social features. Your emails are encrypted at rest. We don't sell data or show ads. Ever." },
+  { q: 'Is it private?', a: "No account, no profile, no social features. Your data is stored securely and never shared. We don't sell data or show ads. Ever." },
 ]
 
 function FAQ() {
