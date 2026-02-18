@@ -167,29 +167,6 @@ function WhyEmail() {
   )
 }
 
-function SocialProof() {
-  const quotes = [
-    { text: "I've tried Habitica, Streaks, and Done. This is the first one that stuck because it's just... email.", who: "Beta user, 47 days" },
-    { text: "My mom uses this. She can barely use her iPhone but she's been emailing her water intake for 3 weeks.", who: "Beta user referral" },
-    { text: "The AI actually noticed I always skip pullups on Mondays. Now I plan around it.", who: "Beta user, 30 days" },
-  ]
-  return (
-    <section className="py-24 px-6">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">What people are saying</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {quotes.map((q, i) => (
-            <div key={i} className="p-6 rounded-xl bg-white/[0.02] border border-white/5">
-              <p className="text-sm text-gray-300 leading-relaxed mb-4">"{q.text}"</p>
-              <p className="text-xs text-gray-500">{q.who}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function Pricing() {
   return (
     <section id="pricing" className="py-24 px-6 bg-white/[0.01]">
@@ -302,7 +279,7 @@ export default function App() {
       <EmailDemo />
       <HowItWorks />
       <WhyEmail />
-      <SocialProof />
+      {/* quotes section removed */}
       <Pricing />
       <FAQ />
       <CTA />
