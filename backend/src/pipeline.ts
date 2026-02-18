@@ -24,6 +24,64 @@ export interface PipelineOutput {
  * Main pipeline: email → parse → execute → build context → generate response
  */
 /**
+ * Detect suggestions in response text and create pending actions.
+ * Patterns like "Would you like me to add X?" or "Should I track Y?"
+ */
+function detectAndCreatePendingActions(
+  db: Database.Database,
+  userId: string,
+  responseText: string,
+  outgoingEmailId?: string
+): void {
+  const suggestions: Array<{ actionType: string; actionData: any }> = [];
+
+  // Pattern: "Would you like me to add/track X?" or "Should I add/track X?"
+  const addPatterns = [
+    /would you like (?:me to )?(?:add|track|start tracking) ["']?(\w+)["']?/gi,
+    /should I (?:add|track|start tracking) ["']?(\w+)["']?/gi,
+    /(?:add|track|start tracking) ["']?(\w+)["']?\?/gi,
+  ];
+
+  for (const pattern of addPatterns) {
+    let match;
+    while ((match = pattern.exec(responseText)) !== null) {
+      const habitName = match[1].toLowerCase();
+      suggestions.push({
+        actionType: 'add_habit',
+        actionData: { name: habitName, unit: null, goal: null },
+      });
+    }
+  }
+
+  // Pattern: "Would you like me to remove/stop tracking X?"
+  const removePatterns = [
+    /would you like (?:me to )?(?:remove|stop tracking|drop) ["']?(\w+)["']?/gi,
+    /should I (?:remove|stop tracking|drop) ["']?(\w+)["']?/gi,
+  ];
+
+  for (const pattern of removePatterns) {
+    let match;
+    while ((match = pattern.exec(responseText)) !== null) {
+      const habitName = match[1].toLowerCase();
+      suggestions.push({
+        actionType: 'remove_habit',
+        actionData: { habit: habitName },
+      });
+    }
+  }
+
+  // Create pending actions for each detected suggestion
+  for (const suggestion of suggestions) {
+    db.prepare(
+      `INSERT INTO pending_actions (user_id, action_type, action_data, suggested_in_email_id) 
+       VALUES (?, ?, ?, ?)`
+    ).run(userId, suggestion.actionType, JSON.stringify(suggestion.actionData), outgoingEmailId ?? null);
+    
+    console.log(`[pipeline] Created pending action: ${suggestion.actionType} for user ${userId}`);
+  }
+}
+
+/**
  * Strip quoted reply text from email body.
  * Removes lines starting with > and "On ... wrote:" headers.
  */
@@ -138,9 +196,14 @@ export async function processPipelineEmail(opts: PipelineOptions): Promise<Pipel
 
   // Log outgoing response
   const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
-  db.prepare(
+  const outgoingResult = db.prepare(
     'INSERT INTO emails (user_id, direction, subject, body) VALUES (?, ?, ?, ?)'
   ).run(userId, 'outgoing', replySubject, finalResponse);
+  
+  const outgoingEmailId = outgoingResult.lastInsertRowid?.toString();
+
+  // Detect suggestions in response and create pending actions
+  detectAndCreatePendingActions(db, userId, finalResponse, outgoingEmailId);
 
   console.log('[pipeline] Pipeline complete\n');
 

@@ -44,8 +44,10 @@ IMPORTANT: When you see negation words like "No", "didn't", "skipped" followed b
 GOAL-SETTING vs CHECK-IN (CRITICAL):
 - "I want to drink 4 glasses of water" / "maybe 4 glasses?" / "my goal is 4" → add_habit with goal, NOT a check-in
 - "I want to track X" / "I'd like to start X" / "can you help me with X" → add_habit, NOT a check-in
+- "I want to improve X" / "I want to work on X" / "I want to get better at X" → add_habit (because if user doesn't have X yet, it should be added)
 - "I drank 4 glasses" / "had 4 glasses" / "water 4" → check-in with value 4
 - Key distinction: future tense / desire = add_habit. Past tense / completed = check-in.
+- ONLY use update_habit when user explicitly says "change goal" / "set target" / "update X to Y"
 
 CORRECTION INTENT:
 - "That's wrong" / "I didn't actually..." / "No I didn't" / "Shouldn't that be..." / "Undo that" → correction

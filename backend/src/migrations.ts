@@ -100,6 +100,26 @@ const migrations: Migration[] = [
       ALTER TABLE inbound_emails ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 4,
+    description: 'Add pending_actions table for affirm→action pipeline',
+    sql: `
+      CREATE TABLE IF NOT EXISTS pending_actions (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        action_type TEXT NOT NULL,
+        action_data TEXT NOT NULL,
+        suggested_in_email_id TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        resolved_at TEXT,
+        resolved_action TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_pending_actions_user_unresolved 
+        ON pending_actions(user_id, created_at) 
+        WHERE resolved_at IS NULL;
+    `,
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

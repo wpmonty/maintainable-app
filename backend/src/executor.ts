@@ -1,10 +1,10 @@
 import Database from 'better-sqlite3';
 import { findHabit, getUserHabits } from './db.js';
-import type { Intent, ExecutionResult, CheckinIntent, AddHabitIntent, RemoveHabitIntent, UpdateHabitIntent, CorrectionIntent } from './types.js';
+import type { Intent, ExecutionResult, CheckinIntent, AddHabitIntent, RemoveHabitIntent, UpdateHabitIntent, CorrectionIntent, AffirmIntent } from './types.js';
 
 // Deterministic execution order per ARCHITECTURE.md
 const EXEC_ORDER: Intent['type'][] = [
-  'add_habit', 'remove_habit', 'update_habit', 'settings',
+  'affirm', 'add_habit', 'remove_habit', 'update_habit', 'settings',
   'checkin', 'query', 'correction', 'greeting', 'help',
 ];
 
@@ -23,6 +23,9 @@ export function executeIntents(
 
   for (const intent of sorted) {
     switch (intent.type) {
+      case 'affirm':
+        results.push(execAffirm(db, userId, intent, date));
+        break;
       case 'add_habit':
         results.push(...execAddHabit(db, userId, intent));
         break;
@@ -225,4 +228,81 @@ function execCheckin(db: Database.Database, userId: string, intent: CheckinInten
   }
 
   return results;
+}
+
+function execAffirm(db: Database.Database, userId: string, intent: AffirmIntent, date: string): ExecutionResult {
+  // Look up the most recent unresolved pending action for this user
+  const pendingAction = db
+    .prepare(
+      `SELECT id, action_type, action_data 
+       FROM pending_actions 
+       WHERE user_id = ? AND resolved_at IS NULL 
+       ORDER BY created_at DESC 
+       LIMIT 1`
+    )
+    .get(userId) as { id: string; action_type: string; action_data: string } | undefined;
+
+  if (!pendingAction) {
+    return {
+      action: 'affirm',
+      success: false,
+      detail: 'No pending action to confirm',
+    };
+  }
+
+  // Parse the action data
+  let actionData: any;
+  try {
+    actionData = JSON.parse(pendingAction.action_data);
+  } catch {
+    return {
+      action: 'affirm',
+      success: false,
+      detail: 'Invalid pending action data',
+    };
+  }
+
+  // Execute the action based on type
+  let executionResult: ExecutionResult;
+  switch (pendingAction.action_type) {
+    case 'add_habit':
+      // Create an AddHabitIntent and execute it
+      const addIntent: AddHabitIntent = {
+        type: 'add_habit',
+        habits: [actionData],
+      };
+      const addResults = execAddHabit(db, userId, addIntent);
+      executionResult = addResults[0] || { action: 'add_habit', success: false, detail: 'Failed to add habit' };
+      break;
+
+    case 'remove_habit':
+      // Create a RemoveHabitIntent and execute it
+      const removeIntent: RemoveHabitIntent = {
+        type: 'remove_habit',
+        habits: [actionData.habit],
+      };
+      const removeResults = execRemoveHabit(db, userId, removeIntent);
+      executionResult = removeResults[0] || { action: 'remove_habit', success: false, detail: 'Failed to remove habit' };
+      break;
+
+    default:
+      executionResult = {
+        action: 'affirm',
+        success: false,
+        detail: `Unknown action type: ${pendingAction.action_type}`,
+      };
+  }
+
+  // Mark pending action as resolved
+  db.prepare(
+    `UPDATE pending_actions 
+     SET resolved_at = datetime('now'), resolved_action = 'affirmed' 
+     WHERE id = ?`
+  ).run(pendingAction.id);
+
+  return {
+    action: 'affirm',
+    success: executionResult.success,
+    detail: `Confirmed: ${executionResult.detail}`,
+  };
 }
