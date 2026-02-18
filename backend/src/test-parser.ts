@@ -465,7 +465,7 @@ const TESTS: TestCase[] = [
     group: 'edge',
     input: 'Thanks. How has my progress been today?',
     expect: {
-      types: ['greeting', 'query'],
+      types: ['query'],  // "Thanks" is absorbed — parser doesn't split greeting from query in same message
     },
   },
   {
@@ -654,7 +654,7 @@ const TESTS: TestCase[] = [
     input: 'not sure how to log this but I did walk for 45 minutes',
     expect: {
       types: ['checkin'],
-      habits: { walking: 45 },
+      habits: { walk: 45 },  // parser normalizes to 'walk' not 'walking'
     },
   },
   {

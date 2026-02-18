@@ -11,6 +11,7 @@ Rules:
   - "some water", "a little water", "a few X", "just a few X", "only a little X", "water 3" (under goal) → status: "partial", value if given
   - "skipped water", "no water", "didn't drink water", "X no", "no X" → status: "skip"
   - "did pullups", "took vitamins", "X yes" (no number, affirmative) → status: "full"
+  - When a habit is mentioned WITHOUT negation and WITHOUT qualifiers like "some"/"a little", it means FULL. E.g. "Water tea and soda" = water is full (they had water).
   - When parsing "X 4/8" or "X 4 out of 8" → value: 4, status: "partial" (did 4 out of goal 8)
 
 NEGATION PATTERNS (CRITICAL):
@@ -33,6 +34,7 @@ IMPORTANT: When you see negation words like "No", "didn't", "skipped" followed b
 - Notes: extra context like "back hurts", "felt great", "rough day", "feeling sick today", "traveling today", "crazy busy day" goes in the "note" field of the check-in entry, NOT as a separate query intent.
 - "skip", "off day", or content-free messages = { "intents": [{ "type": "greeting" }] }
 - "what can you do?", "how does this work?", "help" = { "type": "help" }
+- Multiple off-topic questions in one message ("What's the weather? What's your name? Give me CSV") = { "type": "help" } (single help intent, NOT multiple query intents)
 - Emotional or situational context ("feeling sick", "traveling", "busy day", "back hurts", "felt great") should be absorbed into check-in notes, NOT turned into separate query intents
 - ONLY create query intents for genuine questions about stats/progress/trends, NOT for contextual statements
 - Unknown/ambiguous text that is truly asking a question = { "type": "query", "question": "<original text>" }
@@ -49,9 +51,13 @@ GOAL-SETTING vs CHECK-IN (CRITICAL):
 - Key distinction: future tense / desire = add_habit. Past tense / completed = check-in.
 - ONLY use update_habit when user explicitly says "change goal" / "set target" / "update X to Y"
 
-CORRECTION INTENT:
-- "That's wrong" / "I didn't actually..." / "No I didn't" / "Shouldn't that be..." / "Undo that" → correction
+CORRECTION / CLARIFICATION (CRITICAL):
+- "That's wrong" / "I didn't actually..." / "No I didn't" / "Shouldn't that be..." / "Undo that" / "Wouldn't it be X?" → correction
 - User is disputing something previously recorded
+- These are ALWAYS query or correction intents, NEVER check-ins. Do NOT extract numbers from corrections as check-in values.
+- "Shouldn't that be a partial?" → { "type": "query", "question": "Shouldn't that be a partial?" }
+- "Wouldn't it be five?" → { "type": "query", "question": "Wouldn't it be five?" }
+- If the message is ONLY a correction/question with no new check-in data, return ONLY a query intent.
 - { "type": "correction", "claim": "<what user says is wrong>" }
 
 AFFIRM INTENT:

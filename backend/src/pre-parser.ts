@@ -118,9 +118,9 @@ export function preParseIntent(input: string): ParseResult | null {
   // Normalize
   const normalized = normalizeInput(input);
   
-  // Empty/whitespace-only input
-  if (normalized.length === 0) {
-    return null;
+  // Empty/whitespace-only or single punctuation → greeting
+  if (normalized.length === 0 || /^[.\-_~*]+$/.test(normalized)) {
+    return { intents: [{ type: 'greeting' }] };
   }
   
   // Only match short inputs to avoid false positives
