@@ -49,8 +49,14 @@ export async function processPipelineEmail(opts: PipelineOptions): Promise<Pipel
   // Strip quoted reply text
   const body = stripQuotedText(rawBody);
 
-  // Combine subject + body so intent in subject line isn't lost
-  const input = [subject, body].filter(Boolean).join('. ').trim();
+  // Combine subject + body intelligently:
+  // - First email (no Re:/Fwd:): subject may contain the intent, include it
+  // - Thread replies: subject is just threading metadata, use body only
+  // - Empty body fallback: always use subject
+  const isReply = /^(Re|Fwd):/i.test(subject || '');
+  const input = (!isReply && body.length < 10)
+    ? [subject, body].filter(Boolean).join('. ').trim()
+    : (body || subject || '').trim();
 
   console.log(`\n[pipeline] Processing email from ${from}`);
   console.log(`[pipeline] Subject: ${subject}`);
