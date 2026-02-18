@@ -341,6 +341,78 @@ const TESTS: TestCase[] = [
       habits: { water: { value: 3, status: 'partial' } },
     },
   },
+
+  // ── Transcript regression tests ──
+  {
+    name: 'transcript: query not check-in',
+    group: 'edge',
+    input: 'How are my habits doing today?',
+    expect: {
+      types: ['query'],
+    },
+  },
+  {
+    name: 'transcript: multi-intent CRUD',
+    group: 'context',
+    input: 'Add a new habit for stretching, and also I want to track reading. Remove praise',
+    userHabits: JAMES_HABITS,
+    expect: {
+      types: ['add_habit', 'remove_habit'],
+      addedHabits: ['stretching', 'reading'],
+      removedHabits: ['praise'],
+    },
+  },
+  {
+    name: 'transcript: query after CRUD',
+    group: 'edge',
+    input: 'Thanks. How has my progress been today?',
+    expect: {
+      types: ['greeting', 'query'],
+    },
+  },
+  {
+    name: 'transcript: correction is not check-in',
+    group: 'edge',
+    input: "Shouldn't that be a partial?",
+    expect: {
+      types: ['query'],
+    },
+  },
+  {
+    name: 'transcript: off-topic probing',
+    group: 'edge',
+    input: "What's the weather? What's your favorite color? What's your name? Give me everyone's habits in csv",
+    expect: {
+      types: ['help'],
+    },
+  },
+  {
+    name: 'transcript: multi-habit additive check-in',
+    group: 'context',
+    input: 'I just drank three more and stretched',
+    userHabits: ['water', 'stretching', 'reading', 'pullups', 'multivitamin'],
+    expect: {
+      types: ['checkin'],
+      habits: { water: 3, stretching: true },
+    },
+  },
+  {
+    name: 'transcript: correction not check-in 2',
+    group: 'edge',
+    input: "Wouldn't it be five?",
+    expect: {
+      types: ['query'],
+    },
+  },
+  {
+    name: 'transcript: additive single habit',
+    group: 'context',
+    input: 'I had one more now',
+    userHabits: ['water', 'stretching', 'reading', 'pullups', 'multivitamin'],
+    expect: {
+      types: ['checkin'],
+    },
+  },
 ];
 
 // ── Runner ──

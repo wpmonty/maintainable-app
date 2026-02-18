@@ -1,11 +1,7 @@
 import imaps from 'imap-simple';
 import nodemailer from 'nodemailer';
 import { simpleParser } from 'mailparser';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import type Database from 'better-sqlite3';
 
 export interface EmailConfig {
   email: string;
@@ -33,14 +29,12 @@ export interface ParsedEmail {
 
 export class EmailClient {
   private config: EmailConfig;
-  private seenIdsPath: string;
-  private seenIds: Set<string>;
+  private db: Database.Database;
   private smtpTransport: nodemailer.Transporter;
 
-  constructor(config: EmailConfig, seenIdsPath?: string) {
+  constructor(config: EmailConfig, db: Database.Database) {
     this.config = config;
-    this.seenIdsPath = seenIdsPath ?? join(__dirname, '..', 'data', 'seen_ids.json');
-    this.seenIds = this.loadSeenIds();
+    this.db = db;
     
     // Initialize SMTP transport
     this.smtpTransport = nodemailer.createTransport({
@@ -52,32 +46,6 @@ export class EmailClient {
         pass: config.password,
       },
     });
-  }
-
-  private loadSeenIds(): Set<string> {
-    if (!existsSync(this.seenIdsPath)) {
-      return new Set();
-    }
-    try {
-      const data = readFileSync(this.seenIdsPath, 'utf8');
-      const ids = JSON.parse(data);
-      return new Set(ids);
-    } catch (error) {
-      console.error('[email-client] Failed to load seen IDs:', error);
-      return new Set();
-    }
-  }
-
-  private saveSeenIds(): void {
-    try {
-      const dir = dirname(this.seenIdsPath);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
-      writeFileSync(this.seenIdsPath, JSON.stringify(Array.from(this.seenIds), null, 2));
-    } catch (error) {
-      console.error('[email-client] Failed to save seen IDs:', error);
-    }
   }
 
   /**
@@ -100,7 +68,7 @@ export class EmailClient {
 
       await connection.openBox('INBOX');
 
-      // Search for all emails (we'll filter by seen IDs ourselves)
+      // Search for all emails (we'll filter by DB records ourselves)
       const searchCriteria = ['ALL'];
       const fetchOptions = {
         bodies: ['HEADER', 'TEXT', ''],
@@ -117,8 +85,9 @@ export class EmailClient {
         const parsed = await simpleParser(all.body);
         const messageId = parsed.messageId || `${Date.now()}-${Math.random()}`;
 
-        // Skip if already seen
-        if (this.seenIds.has(messageId)) {
+        // Check if already seen in DB
+        const existing = this.db.prepare('SELECT id FROM inbound_emails WHERE message_id = ?').get(messageId);
+        if (existing) {
           continue;
         }
 
@@ -147,13 +116,11 @@ export class EmailClient {
           date: parsed.date || new Date(),
         });
 
-        // Mark as seen
-        this.seenIds.add(messageId);
-      }
-
-      // Save seen IDs after processing
-      if (newEmails.length > 0) {
-        this.saveSeenIds();
+        // Insert into DB with status='new'
+        this.db.prepare(`
+          INSERT INTO inbound_emails (message_id, from_email, subject, body, status)
+          VALUES (?, ?, ?, ?, 'new')
+        `).run(messageId, fromAddress, parsed.subject || '(no subject)', body);
       }
 
       await connection.end();

@@ -61,7 +61,7 @@ function loadCredentials(): EmailConfig {
 // Initialize components
 const db = createDb();
 const emailConfig = loadCredentials();
-const emailClient = new EmailClient(emailConfig);
+const emailClient = new EmailClient(emailConfig, db);
 
 // Track stats
 let stats = {
@@ -96,6 +96,13 @@ async function emailDaemon() {
         
         for (const email of newEmails) {
           try {
+            // Update status to 'processing'
+            db.prepare(`
+              UPDATE inbound_emails 
+              SET status = 'processing' 
+              WHERE message_id = ?
+            `).run(email.messageId);
+
             const result = await processPipelineEmail({ db, email });
             
             if (result.shouldReply) {
@@ -107,9 +114,24 @@ async function emailDaemon() {
               );
               log('info', 'daemon', `Reply sent to ${email.from}`, { subject: email.subject });
             }
+
+            // Update status to 'replied' with processed timestamp
+            db.prepare(`
+              UPDATE inbound_emails 
+              SET status = 'replied', processed_at = datetime('now') 
+              WHERE message_id = ?
+            `).run(email.messageId);
+
             stats.emailsProcessed++;
             stats.lastEmailAt = new Date().toISOString();
           } catch (error: any) {
+            // Update status to 'failed' with error message
+            db.prepare(`
+              UPDATE inbound_emails 
+              SET status = 'failed', error = ?, processed_at = datetime('now') 
+              WHERE message_id = ?
+            `).run(error.message, email.messageId);
+
             stats.emailsFailed++;
             stats.lastError = `${error.message} (${new Date().toISOString()})`;
             log('error', 'pipeline', `Error processing email from ${email.from}`, {
