@@ -93,6 +93,13 @@ const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_inbound_emails_message_id ON inbound_emails(message_id);
     `,
   },
+  {
+    version: 3,
+    description: 'Add retry_count to inbound_emails for processing queue',
+    sql: `
+      ALTER TABLE inbound_emails ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

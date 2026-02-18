@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { createDb } from './db.js';
 import { EmailClient } from './email-client.js';
 import { processPipelineEmail } from './pipeline.js';
+import { ProcessingQueue } from './queue.js';
 import type { EmailConfig } from './email-client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -62,6 +63,13 @@ function loadCredentials(): EmailConfig {
 const db = createDb();
 const emailConfig = loadCredentials();
 const emailClient = new EmailClient(emailConfig, db);
+const queue = new ProcessingQueue(db);
+
+// Recover any emails interrupted by previous shutdown
+const recovered = queue.recoverInterrupted();
+if (recovered > 0) {
+  log('info', 'queue', `Recovered ${recovered} interrupted email(s) back to queue`);
+}
 
 // Track stats
 let stats = {
@@ -88,62 +96,61 @@ async function emailDaemon() {
 
   while (pollingActive) {
     stats.lastPollAt = new Date().toISOString();
+    
+    // Phase 1: Discover new emails (inserts into DB with status='new')
     try {
       const newEmails = await emailClient.pollNewEmails();
-      
       if (newEmails.length > 0) {
-        log('info', 'daemon', `Found ${newEmails.length} new email(s)`);
-        
-        for (const email of newEmails) {
-          try {
-            // Update status to 'processing'
-            db.prepare(`
-              UPDATE inbound_emails 
-              SET status = 'processing' 
-              WHERE message_id = ?
-            `).run(email.messageId);
-
-            const result = await processPipelineEmail({ db, email });
-            
-            if (result.shouldReply) {
-              await emailClient.sendReply(
-                email.from,
-                result.replySubject,
-                result.replyBody,
-                email.messageId
-              );
-              log('info', 'daemon', `Reply sent to ${email.from}`, { subject: email.subject });
-            }
-
-            // Update status to 'replied' with processed timestamp
-            db.prepare(`
-              UPDATE inbound_emails 
-              SET status = 'replied', processed_at = datetime('now') 
-              WHERE message_id = ?
-            `).run(email.messageId);
-
-            stats.emailsProcessed++;
-            stats.lastEmailAt = new Date().toISOString();
-          } catch (error: any) {
-            // Update status to 'failed' with error message
-            db.prepare(`
-              UPDATE inbound_emails 
-              SET status = 'failed', error = ?, processed_at = datetime('now') 
-              WHERE message_id = ?
-            `).run(error.message, email.messageId);
-
-            stats.emailsFailed++;
-            stats.lastError = `${error.message} (${new Date().toISOString()})`;
-            log('error', 'pipeline', `Error processing email from ${email.from}`, {
-              error: error.message,
-              stack: error.stack,
-            });
-          }
-        }
+        log('info', 'daemon', `Discovered ${newEmails.length} new email(s)`);
       }
     } catch (error: any) {
-      stats.lastError = `${error.message} (${new Date().toISOString()})`;
+      stats.lastError = `Poll error: ${error.message} (${new Date().toISOString()})`;
       log('error', 'daemon', `Polling error: ${error.message}`);
+    }
+
+    // Phase 2: Process queue (new + retryable failed items)
+    const items = queue.dequeue(5);
+    for (const item of items) {
+      try {
+        queue.markProcessing(item.messageId);
+        
+        if (item.retryCount > 0) {
+          log('info', 'queue', `Retrying email (attempt ${item.retryCount + 1})`, { messageId: item.messageId });
+        }
+
+        const email = {
+          from: item.fromEmail,
+          subject: item.subject,
+          body: item.body,
+          messageId: item.messageId,
+          date: new Date(item.receivedAt),
+        };
+
+        const result = await processPipelineEmail({ db, email });
+        
+        if (result.shouldReply) {
+          await emailClient.sendReply(
+            email.from,
+            result.replySubject,
+            result.replyBody,
+            email.messageId
+          );
+          log('info', 'daemon', `Reply sent to ${email.from}`, { subject: email.subject });
+        }
+
+        queue.markReplied(item.messageId);
+        stats.emailsProcessed++;
+        stats.lastEmailAt = new Date().toISOString();
+      } catch (error: any) {
+        queue.markFailed(item.messageId, error.message);
+        stats.emailsFailed++;
+        stats.lastError = `${error.message} (${new Date().toISOString()})`;
+        log('error', 'pipeline', `Error processing email from ${item.fromEmail}`, {
+          error: error.message,
+          stack: error.stack,
+          retryCount: item.retryCount,
+        });
+      }
     }
     
     await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
@@ -167,6 +174,7 @@ app.get('/health', (req, res) => {
     service: 'maintainable-backend',
     uptime: process.uptime(),
     memory: process.memoryUsage(),
+    queue: queue.stats(),
     ...stats,
   });
 });
