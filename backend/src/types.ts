@@ -56,6 +56,11 @@ export interface SettingsIntent {
   changes: Record<string, unknown>;
 }
 
+export interface CorrectionIntent {
+  type: 'correction';
+  claim: string;  // What the user says is wrong, e.g. "I didn't drink water"
+}
+
 export type Intent =
   | CheckinIntent
   | AddHabitIntent
@@ -64,7 +69,8 @@ export type Intent =
   | QueryIntent
   | GreetingIntent
   | HelpIntent
-  | SettingsIntent;
+  | SettingsIntent
+  | CorrectionIntent;
 
 export interface ParseResult {
   intents: Intent[];

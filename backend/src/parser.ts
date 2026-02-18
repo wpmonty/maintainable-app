@@ -35,7 +35,18 @@ NEGATION PATTERNS (CRITICAL):
 - For "change goal"/"set target" = update_habit intent.
 - For "how am I doing", "stats", "progress", "trend" = query intent.
 
-Intent types: checkin, add_habit, remove_habit, update_habit, query, greeting, help, settings
+GOAL-SETTING vs CHECK-IN (CRITICAL):
+- "I want to drink 4 glasses of water" / "maybe 4 glasses?" / "my goal is 4" → add_habit with goal, NOT a check-in
+- "I want to track X" / "I'd like to start X" / "can you help me with X" → add_habit, NOT a check-in
+- "I drank 4 glasses" / "had 4 glasses" / "water 4" → check-in with value 4
+- Key distinction: future tense / desire = add_habit. Past tense / completed = check-in.
+
+CORRECTION INTENT:
+- "That's wrong" / "I didn't actually..." / "No I didn't" / "Shouldn't that be..." / "Undo that" → correction
+- User is disputing something previously recorded
+- { "type": "correction", "claim": "<what user says is wrong>" }
+
+Intent types: checkin, add_habit, remove_habit, update_habit, query, greeting, help, settings, correction
 
 Output ONLY valid JSON matching this schema:
 {
@@ -47,6 +58,7 @@ Output ONLY valid JSON matching this schema:
     // query: { "type": "query", "scope": "week", "question": "how am I doing?" }
     // greeting: { "type": "greeting" }
     // help: { "type": "help" }
+    // correction: { "type": "correction", "claim": "I didn't drink water today" }
   ]
 }
 

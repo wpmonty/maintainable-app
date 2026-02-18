@@ -1,11 +1,11 @@
 import Database from 'better-sqlite3';
 import { findHabit, getUserHabits } from './db.js';
-import type { Intent, ExecutionResult, CheckinIntent, AddHabitIntent, RemoveHabitIntent, UpdateHabitIntent } from './types.js';
+import type { Intent, ExecutionResult, CheckinIntent, AddHabitIntent, RemoveHabitIntent, UpdateHabitIntent, CorrectionIntent } from './types.js';
 
 // Deterministic execution order per ARCHITECTURE.md
 const EXEC_ORDER: Intent['type'][] = [
   'add_habit', 'remove_habit', 'update_habit', 'settings',
-  'checkin', 'query', 'greeting', 'help',
+  'checkin', 'query', 'correction', 'greeting', 'help',
 ];
 
 export function executeIntents(
@@ -37,6 +37,9 @@ export function executeIntents(
         break;
       case 'query':
         results.push({ action: 'query', success: true, detail: intent.question });
+        break;
+      case 'correction':
+        results.push({ action: 'correction', success: true, detail: `User correction: ${(intent as CorrectionIntent).claim}` });
         break;
       case 'greeting':
         results.push({ action: 'greeting', success: true, detail: 'User greeted the assistant — respond warmly and mention habits if relevant' });
