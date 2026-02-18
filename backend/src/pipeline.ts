@@ -72,7 +72,7 @@ export async function processPipelineEmail(opts: PipelineOptions): Promise<Pipel
 
   // Handle new user onboarding
   if (isNew) {
-    const onboarding = await handleNewUserEmail(from, body, isNew);
+    const onboarding = await handleNewUserEmail(from, input, isNew);
     
     if (onboarding.shouldSendWelcome && onboarding.welcomeEmail) {
       // Send welcome email, don't process as check-in
