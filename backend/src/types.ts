@@ -65,6 +65,10 @@ export interface AffirmIntent {
   type: 'affirm';
 }
 
+export interface DeclineIntent {
+  type: 'decline';
+}
+
 export type Intent =
   | CheckinIntent
   | AddHabitIntent
@@ -75,7 +79,8 @@ export type Intent =
   | HelpIntent
   | SettingsIntent
   | CorrectionIntent
-  | AffirmIntent;
+  | AffirmIntent
+  | DeclineIntent;
 
 export interface ParseResult {
   intents: Intent[];

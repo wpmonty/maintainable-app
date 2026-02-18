@@ -1,10 +1,10 @@
 import Database from 'better-sqlite3';
 import { findHabit, getUserHabits } from './db.js';
-import type { Intent, ExecutionResult, CheckinIntent, AddHabitIntent, RemoveHabitIntent, UpdateHabitIntent, CorrectionIntent, AffirmIntent } from './types.js';
+import type { Intent, ExecutionResult, CheckinIntent, AddHabitIntent, RemoveHabitIntent, UpdateHabitIntent, CorrectionIntent, AffirmIntent, DeclineIntent } from './types.js';
 
 // Deterministic execution order per ARCHITECTURE.md
 const EXEC_ORDER: Intent['type'][] = [
-  'affirm', 'add_habit', 'remove_habit', 'update_habit', 'settings',
+  'affirm', 'decline', 'add_habit', 'remove_habit', 'update_habit', 'settings',
   'checkin', 'query', 'correction', 'greeting', 'help',
 ];
 
@@ -25,6 +25,9 @@ export function executeIntents(
     switch (intent.type) {
       case 'affirm':
         results.push(execAffirm(db, userId, intent, date));
+        break;
+      case 'decline':
+        results.push(execDecline(db, userId));
         break;
       case 'add_habit':
         results.push(...execAddHabit(db, userId, intent));
@@ -304,5 +307,47 @@ function execAffirm(db: Database.Database, userId: string, intent: AffirmIntent,
     action: 'affirm',
     success: executionResult.success,
     detail: `Confirmed: ${executionResult.detail}`,
+  };
+}
+
+function execDecline(db: Database.Database, userId: string): ExecutionResult {
+  // Look up the most recent unresolved pending action for this user
+  const pendingAction = db
+    .prepare(
+      `SELECT id, action_type, action_data 
+       FROM pending_actions 
+       WHERE user_id = ? AND resolved_at IS NULL 
+       ORDER BY created_at DESC 
+       LIMIT 1`
+    )
+    .get(userId) as { id: string; action_type: string; action_data: string } | undefined;
+
+  if (!pendingAction) {
+    return {
+      action: 'decline',
+      success: true,
+      detail: 'No pending action to decline',
+    };
+  }
+
+  // Mark pending action as denied
+  db.prepare(
+    `UPDATE pending_actions 
+     SET resolved_at = datetime('now'), resolved_action = 'denied' 
+     WHERE id = ?`
+  ).run(pendingAction.id);
+
+  let actionDesc: string;
+  try {
+    const data = JSON.parse(pendingAction.action_data);
+    actionDesc = data.name || data.habit || pendingAction.action_type;
+  } catch {
+    actionDesc = pendingAction.action_type;
+  }
+
+  return {
+    action: 'decline',
+    success: true,
+    detail: `Declined: ${actionDesc} (${pendingAction.action_type})`,
   };
 }

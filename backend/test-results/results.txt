@@ -3,75 +3,75 @@
 
    Running all tests (64 tests)
 ======================================================================
-  simple numeric check-in... ✅ 12059ms
-  boolean check-in... ✅ 9235ms
-  mixed numeric and boolean... ✅ 12610ms
-  single habit check-in... ✅ 19279ms
-  add single habit... ✅ 12819ms
-  add multiple habits... ✅ 10022ms
-  remove habit... ✅ 7633ms
-  update habit goal... ✅ 6583ms
-  checkin + add + remove + query... ✅ 15801ms
-  add then immediately check in... ✅ 8876ms
-  weekly progress query... ✅ 9886ms
-  trend query... ✅ 5042ms
-  greeting... ✅ 6680ms
-  skip day... ✅ 6894ms
-  help request... ✅ 7396ms
-  affirm: yes... ✅ 12743ms
-  affirm: yeah sure... ✅ 15221ms
-  affirm: absolutely... ✅ 7709ms
-  affirm: let's do it... ✅ 5992ms
+  simple numeric check-in... ✅ 13818ms
+  boolean check-in... ✅ 4232ms
+  mixed numeric and boolean... ✅ 7300ms
+  single habit check-in... ✅ 3934ms
+  add single habit... ✅ 2882ms
+  add multiple habits... ✅ 4981ms
+  remove habit... ✅ 2264ms
+  update habit goal... ✅ 2448ms
+  checkin + add + remove + query... ✅ 9668ms
+  add then immediately check in... ✅ 6391ms
+  weekly progress query... ✅ 2528ms
+  trend query... ✅ 2517ms
+  greeting... ✅ 1588ms
+  skip day... ✅ 1602ms
+  help request... ✅ 1499ms
+  affirm: yes... ✅ 1586ms
+  affirm: yeah sure... ✅ 1641ms
+  affirm: absolutely... ✅ 1643ms
+  affirm: let's do it... ✅ 1572ms
   affirm: sounds good... ❌ types:✗ got [greeting]
-  affirm: yep go ahead... ✅ 8532ms
-  natural language checkin... ✅ 12228ms
-  checkin with note... ✅ 7141ms
+  affirm: yep go ahead... ✅ 1577ms
+  natural language checkin... ✅ 7448ms
+  checkin with note... ✅ 4168ms
   empty/minimal... ❌ types:✗ got [add_habit,checkin]
-  skip explicit... ✅ 9208ms
-  partial check-in... ✅ 13331ms
-  mixed status... ✅ 14737ms
-  real: mixed beverages + late + negatives + query... ✅ 23761ms
-  real: all good... ✅ 14743ms
-  real: everything but X... ✅ 9844ms
+  skip explicit... ✅ 4227ms
+  partial check-in... ✅ 6507ms
+  mixed status... ✅ 6267ms
+  real: mixed beverages + late + negatives + query... ✅ 20337ms
+  real: all good... ✅ 7843ms
+  real: everything but X... ✅ 4214ms
   real: everything with partial... ❌ types:✗ got [checkin,greeting]
   real: terse mixed list... ❌ types:✓ water:status got skip want full
   real: negatives with good otherwise... ❌ types:✗ got [add_habit,checkin]
-  real: not yet... ✅ 10387ms
-  shorthand habits... ✅ 8127ms
-  negatives... ✅ 9660ms
-  rough day with note... ✅ 6230ms
-  transcript: query not check-in... ✅ 2633ms
-  transcript: multi-intent CRUD... ✅ 7560ms
+  real: not yet... ✅ 4280ms
+  shorthand habits... ✅ 5491ms
+  negatives... ✅ 4211ms
+  rough day with note... ✅ 6229ms
+  transcript: query not check-in... ✅ 2634ms
+  transcript: multi-intent CRUD... ✅ 7475ms
   transcript: query after CRUD... ❌ types:✗ got [query]
   transcript: correction is not check-in... ❌ types:✗ got [checkin,query]
   transcript: off-topic probing... ❌ types:✗ got [query,query,query,query]
-  transcript: multi-habit additive check-in... ✅ 6071ms
+  transcript: multi-habit additive check-in... ✅ 6049ms
   transcript: correction not check-in 2... ❌ types:✗ got [add_habit,checkin,query,remove_habit,update_habit]
-  transcript: additive single habit... ❌ types:✗ got [add_habit,checkin,query,remove_habit,update_habit]
-  realistic: morning routine complete... ✅ 6156ms
-  realistic: forgot yesterday... ✅ 4575ms
-  realistic: late night checkin... ✅ 5109ms
-  realistic: too busy... ✅ 7112ms
-  realistic: sick day... ✅ 4885ms
-  realistic: goal adjustment... ✅ 2444ms
-  realistic: motivation check... ✅ 2705ms
-  realistic: weekend lapse... ✅ 5088ms
-  realistic: back on track... ✅ 7232ms
-  realistic: partial effort... ✅ 6336ms
-  realistic: new habit idea... ✅ 3533ms
+  transcript: additive single habit... ❌ types:✗ got [add_habit,checkin,greeting,query]
+  realistic: morning routine complete... ✅ 6160ms
+  realistic: forgot yesterday... ✅ 4562ms
+  realistic: late night checkin... ✅ 5123ms
+  realistic: too busy... ✅ 5169ms
+  realistic: sick day... ✅ 4918ms
+  realistic: goal adjustment... ✅ 2440ms
+  realistic: motivation check... ✅ 2694ms
+  realistic: weekend lapse... ✅ 5102ms
+  realistic: back on track... ✅ 7224ms
+  realistic: partial effort... ✅ 6337ms
+  realistic: new habit idea... ✅ 3536ms
   realistic: drop useless habit... ❌ types:✗ got [add_habit,checkin] no remove_habit intent
-  realistic: travel day... ✅ 4742ms
-  realistic: multiple habits at once... ✅ 7060ms
+  realistic: travel day... ✅ 5626ms
+  realistic: multiple habits at once... ✅ 7051ms
   realistic: confused about format... ❌ types:✓ missing:walking
-  realistic: enthusiastic all done... ✅ 7413ms
-  realistic: simple yes no pattern... ✅ 5231ms
-  realistic: comparative query... ✅ 2769ms
-  realistic: batch add... ✅ 5557ms
+  realistic: enthusiastic all done... ✅ 7410ms
+  realistic: simple yes no pattern... ✅ 7048ms
+  realistic: comparative query... ✅ 2747ms
+  realistic: batch add... ✅ 5565ms
 
 ======================================================================
 
 📊 Results: 52/64 passed (81%)
-⏱️  Avg latency: 8707ms
+⏱️  Avg latency: 5375ms
 🤖 Model: llama3.1:8b
 
 Failed tests:
@@ -80,7 +80,7 @@ Failed tests:
   ❌ empty/minimal: ❌ types:✗ got [add_habit,checkin]
      Raw: [{"type":"checkin","entries":[{"habit":"water","status":"full","value":8,"unit":"glasses"}]},{"type":"add_habit","habits":[{"name":"meditation","unit":null,"goal":null}]}]
   ❌ real: everything with partial: ❌ types:✗ got [checkin,greeting]
-     Raw: [{"type":"checkin","entries":[{"habit":"pullups","status":"partial","value":null,"note":""}]},{"type":"greeting"}]
+     Raw: [{"type":"checkin","entries":[{"habit":"pullups","status":"partial","value":null,"note":"just a few"}]},{"type":"greeting"}]
   ❌ real: terse mixed list: ❌ types:✓ water:status got skip want full
      Raw: [{"type":"checkin","entries":[{"habit":"water","status":"skip"},{"habit":"tea","status":"full"},{"habit":"soda","status":"full"},{"habit":"pullups","status":"skip"},{"habit":"praise wife","status":"fu
   ❌ real: negatives with good otherwise: ❌ types:✗ got [add_habit,checkin]
@@ -93,8 +93,8 @@ Failed tests:
      Raw: [{"type":"query","question":"What's the weather?"},{"type":"query","question":"What's your favorite color?"},{"type":"query","question":"What's your name?"},{"type":"query","question":"Give me everyon
   ❌ transcript: correction not check-in 2: ❌ types:✗ got [add_habit,checkin,query,remove_habit,update_habit]
      Raw: [{"type":"checkin","entries":[{"habit":"water","status":"full","value":8,"unit":"glasses"}]},{"type":"add_habit","habits":[{"name":"meditation","unit":null,"goal":null}]},{"type":"remove_habit","habit
-  ❌ transcript: additive single habit: ❌ types:✗ got [add_habit,checkin,query,remove_habit,update_habit]
-     Raw: [{"type":"checkin","entries":[{"habit":"water","status":"full","value":8,"unit":"glasses"},{"habit":"stretching","status":"partial","value":30}]},{"type":"add_habit","habits":[{"name":"meditation","un
+  ❌ transcript: additive single habit: ❌ types:✗ got [add_habit,checkin,greeting,query]
+     Raw: [{"type":"checkin","entries":[{"habit":"water","status":"full","value":8,"unit":"glasses"},{"habit":"stretching","status":"partial","value":30}]},{"type":"add_habit","habits":[{"name":"reading","unit"
   ❌ realistic: drop useless habit: ❌ types:✗ got [add_habit,checkin] no remove_habit intent
      Raw: [{"type":"checkin","entries":[{"habit":"water","status":"full","value":8,"unit":"glasses"}]},{"type":"add_habit","habits":[{"name":"meditation","goal":null}]}]
   ❌ realistic: confused about format: ❌ types:✓ missing:walking

@@ -215,6 +215,55 @@ const TESTS: TestCase[] = [
       types: ['affirm'],
     },
   },
+  // ── Decline tests ──
+  {
+    name: 'decline: no',
+    group: 'basic',
+    input: 'no',
+    expect: {
+      types: ['decline'],
+    },
+  },
+  {
+    name: 'decline: no thanks',
+    group: 'basic',
+    input: 'no thanks',
+    expect: {
+      types: ['decline'],
+    },
+  },
+  {
+    name: 'decline: nah',
+    group: 'basic',
+    input: 'nah',
+    expect: {
+      types: ['decline'],
+    },
+  },
+  {
+    name: 'decline: nope',
+    group: 'basic',
+    input: 'nope',
+    expect: {
+      types: ['decline'],
+    },
+  },
+  {
+    name: 'decline: never mind',
+    group: 'basic',
+    input: 'never mind',
+    expect: {
+      types: ['decline'],
+    },
+  },
+  {
+    name: 'decline: maybe later',
+    group: 'basic',
+    input: 'maybe later',
+    expect: {
+      types: ['decline'],
+    },
+  },
   {
     name: 'natural language checkin',
     group: 'edge',

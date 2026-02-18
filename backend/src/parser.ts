@@ -59,7 +59,13 @@ AFFIRM INTENT:
 - User is confirming or agreeing to something (e.g., welcome email confirmation)
 - { "type": "affirm" }
 
-Intent types: checkin, add_habit, remove_habit, update_habit, query, greeting, help, settings, correction, affirm
+DECLINE INTENT:
+- "no" / "nah" / "no thanks" / "nope" / "never mind" / "skip that" / "don't add that" / "not right now" / "maybe later" → decline
+- User is declining or rejecting a suggestion (e.g., "Would you like me to add X?" → "No thanks")
+- IMPORTANT: "no" by itself = decline. "No X" or "no pullups" = checkin with skip status. Context matters.
+- { "type": "decline" }
+
+Intent types: checkin, add_habit, remove_habit, update_habit, query, greeting, help, settings, correction, affirm, decline
 
 Output ONLY valid JSON matching this schema:
 {
@@ -73,6 +79,7 @@ Output ONLY valid JSON matching this schema:
     // help: { "type": "help" }
     // correction: { "type": "correction", "claim": "I didn't drink water today" }
     // affirm: { "type": "affirm" }
+    // decline: { "type": "decline" }
   ]
 }
 
