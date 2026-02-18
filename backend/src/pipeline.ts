@@ -49,9 +49,13 @@ export async function processPipelineEmail(opts: PipelineOptions): Promise<Pipel
   // Strip quoted reply text
   const body = stripQuotedText(rawBody);
 
+  // Combine subject + body so intent in subject line isn't lost
+  const input = [subject, body].filter(Boolean).join('. ').trim();
+
   console.log(`\n[pipeline] Processing email from ${from}`);
   console.log(`[pipeline] Subject: ${subject}`);
   console.log(`[pipeline] Body: ${body.substring(0, 100)}${body.length > 100 ? '...' : ''}`);
+  console.log(`[pipeline] Combined input: ${input.substring(0, 120)}${input.length > 120 ? '...' : ''}`);
 
   // Look up or create user
   const { id: userId, isNew } = getOrCreateUser(db, from);
@@ -95,7 +99,7 @@ export async function processPipelineEmail(opts: PipelineOptions): Promise<Pipel
 
   // Parse intents
   console.log('[pipeline] Parsing intents...');
-  const { result: parseResult, latencyMs: parseLatency } = await parseIntents(body, {
+  const { result: parseResult, latencyMs: parseLatency } = await parseIntents(input, {
     userHabits,
   });
   console.log(`[pipeline] Parsed ${parseResult.intents.length} intents (${parseLatency}ms)`);
@@ -108,7 +112,7 @@ export async function processPipelineEmail(opts: PipelineOptions): Promise<Pipel
 
   // Build structured context
   console.log('[pipeline] Building context...');
-  const structuredContext = buildStructuredContext(db, userId, today, executionResults, body);
+  const structuredContext = buildStructuredContext(db, userId, today, executionResults, input);
 
   // Generate response
   console.log('[pipeline] Generating response...');
