@@ -1,6 +1,6 @@
 // ── Demo script for signup flow ──
 
-import { handleNewUserEmail, augmentFirstCheckinResponse, generateOutOfCreditsResponse } from './onboarding.js';
+import { handleNewUserEmail, augmentFirstCheckinResponse } from './onboarding.js';
 import { generateWelcomeEmail, generateActivationEmail, generateDeactivationEmail } from './welcome.js';
 import type { PaymentWebhookPayload } from './webhooks.js';
 
@@ -69,7 +69,7 @@ const paymentSuccess: PaymentWebhookPayload = {
   creditsGranted: 30,
   transactionId: 'tx_abc123',
   timestamp: new Date().toISOString(),
-};
+} as const;
 
 console.log(`   Event: ${paymentSuccess.event}`);
 console.log(`   User: ${paymentSuccess.userEmail}`);
@@ -77,7 +77,7 @@ console.log(`   Credits: ${paymentSuccess.creditsGranted}`);
 
 const activationEmail = generateActivationEmail({
   userEmail: paymentSuccess.userEmail,
-  creditsGranted: paymentSuccess.creditsGranted,
+  creditsGranted: paymentSuccess.creditsGranted ?? 0,
 });
 
 console.log('\n✅ Activation email generated:');
@@ -127,17 +127,18 @@ const refundEmail = generateDeactivationEmail({
 
 console.log('\n✅ Refund email generated:');
 console.log(`   Subject: ${refundEmail.subject}`);
-console.log(`   Body:\n${refundEmail.body.split('\n').map(l => `     ${l}`).join('\n')}`);
+console.log(`   Body:\n${refundEmail.body.split('\n').map((l: string) => `     ${l}`).join('\n')}`);
 
 // ── Scenario 7: Out of credits ──
-console.log('\n\n🚫 Scenario 7: User out of credits');
-console.log('─'.repeat(70));
+// console.log('\n\n🚫 Scenario 7: User out of credits');
+// console.log('─'.repeat(70));
 
-const outOfCredits = generateOutOfCreditsResponse('alice@example.com');
+// NOTE: generateOutOfCreditsResponse was removed, commenting out this scenario
+// const outOfCredits = generateOutOfCreditsResponse('alice@example.com');
 
-console.log('✅ Out of credits email generated:');
-console.log(`   Subject: ${outOfCredits.subject}`);
-console.log(`   Body:\n${outOfCredits.body.split('\n').map(l => `     ${l}`).join('\n')}`);
+// console.log('✅ Out of credits email generated:');
+// console.log(`   Subject: ${outOfCredits.subject}`);
+// console.log(`   Body:\n${outOfCredits.body.split('\n').map((l: string) => `     ${l}`).join('\n')}`);
 
 console.log('\n' + '━'.repeat(70));
 console.log('  DEMO COMPLETE');

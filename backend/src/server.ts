@@ -52,10 +52,37 @@ process.on('unhandledRejection', (reason: any) => {
 function loadCredentials(): EmailConfig {
   try {
     const raw = readFileSync(CREDENTIALS_PATH, 'utf8');
-    return JSON.parse(raw);
+    const config = JSON.parse(raw);
+    validateEmailConfig(config);
+    return config;
   } catch (error: any) {
     log('error', 'config', `Failed to load credentials: ${error.message}`);
     process.exit(1);
+  }
+}
+
+// Validate email configuration structure
+function validateEmailConfig(config: any): asserts config is EmailConfig {
+  if (!config || typeof config !== 'object') {
+    throw new Error('Config must be an object');
+  }
+  if (typeof config.email !== 'string' || !config.email.includes('@')) {
+    throw new Error('Config must include valid email address');
+  }
+  if (typeof config.password !== 'string') {
+    throw new Error('Config must include password string');
+  }
+  if (!config.imap || typeof config.imap !== 'object') {
+    throw new Error('Config must include imap object');
+  }
+  if (typeof config.imap.host !== 'string' || typeof config.imap.port !== 'number') {
+    throw new Error('IMAP config must include host (string) and port (number)');
+  }
+  if (!config.smtp || typeof config.smtp !== 'object') {
+    throw new Error('Config must include smtp object');
+  }
+  if (typeof config.smtp.host !== 'string' || typeof config.smtp.port !== 'number') {
+    throw new Error('SMTP config must include host (string) and port (number)');
   }
 }
 
