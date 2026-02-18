@@ -8,28 +8,34 @@ Rules:
 - Habit names should be normalized to lowercase singular form.
 - Each check-in entry has a STATUS field: "full" (did it fully/met goal), "partial" (did some but not full), or "skip" (didn't do it).
   - "water 8" with goal 8 → status: "full", value: 8
-  - "some water", "a little water", "water 3" (under goal) → status: "partial", value if given
-  - "skipped water", "no water", "didn't drink water" → status: "skip"
-  - "did pullups", "took vitamins" (no number, affirmative) → status: "full"
+  - "some water", "a little water", "a few X", "just a few X", "only a little X", "water 3" (under goal) → status: "partial", value if given
+  - "skipped water", "no water", "didn't drink water", "X no", "no X" → status: "skip"
+  - "did pullups", "took vitamins", "X yes" (no number, affirmative) → status: "full"
+  - When parsing "X 4/8" or "X 4 out of 8" → value: 4, status: "partial" (did 4 out of goal 8)
 
 NEGATION PATTERNS (CRITICAL):
-- "No X" → create ONE entry: { habit: "X", status: "skip" }
-- "No X or Y" / "No X and Y" → create entries for EACH: [{ habit: "X", status: "skip" }, { habit: "Y", status: "skip" }]
-- "No X, but good otherwise" / "No X or Y, but everything else" → 
-  * Create SKIP entries for the explicitly negated habits (X, Y)
+- "No X" / "No X today" / "Didn't do X" / "Skipped X" / "X no" → create ONE checkin entry: { habit: "X", status: "skip" }
+- "No X or Y" / "No X and Y" → create SKIP entries for EACH: [{ habit: "X", status: "skip" }, { habit: "Y", status: "skip" }]
+- "No X yet" / "No X so far" → SKIP entry for X (user is indicating they haven't done it)
+- "X yes, Y no" / "vitamins yes, exercise no" → create FULL entry for X and SKIP entry for Y (NOT remove_habit)
+- "No X, but good otherwise" / "No X or Y, but everything else" / "No X, good otherwise" / "No X, rest is good" → 
+  * Create SKIP entries for ALL explicitly negated habits (X, Y)
   * Create FULL entries for ALL other habits the user tracks (requires userHabits context)
   * Example: user tracks [water, pullups, vitamins], message "No pullups, good otherwise" → 
     [{ habit: "pullups", status: "skip" }, { habit: "water", status: "full" }, { habit: "vitamins", status: "full" }]
-- "Everything but X" / "All good except X" → 
+- "Everything but X" / "All good except X" / "Everything except X" → 
   * Create SKIP entry for X
   * Create FULL entries for all other habits in userHabits
-- "Everything" / "All good" / "All done" → create FULL entries for ALL habits in userHabits
+- "Everything" / "All good" / "All done" / "Everything today" → create FULL entries for ALL habits in userHabits
 
-- Notes: extra context like "back hurts", "felt great", "rough day" goes in the "note" field of the check-in entry, NOT as a separate intent.
+IMPORTANT: When you see negation words like "No", "didn't", "skipped" followed by a habit name, or "habit no", you MUST create a skip entry for that habit, NOT a remove_habit intent. "X no" means they didn't do it today (skip), not that they want to stop tracking it (remove).
+
+- Notes: extra context like "back hurts", "felt great", "rough day", "feeling sick today", "traveling today", "crazy busy day" goes in the "note" field of the check-in entry, NOT as a separate query intent.
 - "skip", "off day", or content-free messages = { "intents": [{ "type": "greeting" }] }
 - "what can you do?", "how does this work?", "help" = { "type": "help" }
-- Extra context after a check-in like "back hurts" or "felt great" is a NOTE on the check-in, not a separate query
-- Unknown/ambiguous text = { "type": "query", "question": "<original text>" }
+- Emotional or situational context ("feeling sick", "traveling", "busy day", "back hurts", "felt great") should be absorbed into check-in notes, NOT turned into separate query intents
+- ONLY create query intents for genuine questions about stats/progress/trends, NOT for contextual statements
+- Unknown/ambiguous text that is truly asking a question = { "type": "query", "question": "<original text>" }
 - For "add"/"track"/"start" + habit name = add_habit intent.
 - For "drop"/"stop"/"remove" + habit name = remove_habit intent.
 - For "change goal"/"set target" = update_habit intent.
@@ -46,7 +52,12 @@ CORRECTION INTENT:
 - User is disputing something previously recorded
 - { "type": "correction", "claim": "<what user says is wrong>" }
 
-Intent types: checkin, add_habit, remove_habit, update_habit, query, greeting, help, settings, correction
+AFFIRM INTENT:
+- "yes" / "yeah" / "yep" / "sure" / "ok" / "okay" / "absolutely" / "let's do it" / "sounds good" / "go ahead" → affirm
+- User is confirming or agreeing to something (e.g., welcome email confirmation)
+- { "type": "affirm" }
+
+Intent types: checkin, add_habit, remove_habit, update_habit, query, greeting, help, settings, correction, affirm
 
 Output ONLY valid JSON matching this schema:
 {
@@ -59,6 +70,7 @@ Output ONLY valid JSON matching this schema:
     // greeting: { "type": "greeting" }
     // help: { "type": "help" }
     // correction: { "type": "correction", "claim": "I didn't drink water today" }
+    // affirm: { "type": "affirm" }
   ]
 }
 

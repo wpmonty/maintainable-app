@@ -61,6 +61,10 @@ export interface CorrectionIntent {
   claim: string;  // What the user says is wrong, e.g. "I didn't drink water"
 }
 
+export interface AffirmIntent {
+  type: 'affirm';
+}
+
 export type Intent =
   | CheckinIntent
   | AddHabitIntent
@@ -70,7 +74,8 @@ export type Intent =
   | GreetingIntent
   | HelpIntent
   | SettingsIntent
-  | CorrectionIntent;
+  | CorrectionIntent
+  | AffirmIntent;
 
 export interface ParseResult {
   intents: Intent[];

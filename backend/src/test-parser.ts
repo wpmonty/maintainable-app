@@ -168,6 +168,54 @@ const TESTS: TestCase[] = [
     },
   },
   {
+    name: 'affirm: yes',
+    group: 'basic',
+    input: 'yes',
+    expect: {
+      types: ['affirm'],
+    },
+  },
+  {
+    name: 'affirm: yeah sure',
+    group: 'basic',
+    input: 'yeah sure',
+    expect: {
+      types: ['affirm'],
+    },
+  },
+  {
+    name: 'affirm: absolutely',
+    group: 'basic',
+    input: 'absolutely',
+    expect: {
+      types: ['affirm'],
+    },
+  },
+  {
+    name: "affirm: let's do it",
+    group: 'basic',
+    input: "let's do it",
+    expect: {
+      types: ['affirm'],
+    },
+  },
+  {
+    name: 'affirm: sounds good',
+    group: 'basic',
+    input: 'sounds good',
+    expect: {
+      types: ['affirm'],
+    },
+  },
+  {
+    name: 'affirm: yep go ahead',
+    group: 'basic',
+    input: 'yep go ahead',
+    expect: {
+      types: ['affirm'],
+    },
+  },
+  {
     name: 'natural language checkin',
     group: 'edge',
     input: 'drank about 7 glasses of water today and did 15 pullups. also walked for 30 min',
@@ -411,6 +459,191 @@ const TESTS: TestCase[] = [
     userHabits: ['water', 'stretching', 'reading', 'pullups', 'multivitamin'],
     expect: {
       types: ['checkin'],
+    },
+  },
+
+  // ── New realistic test cases ──
+  {
+    name: 'realistic: morning routine complete',
+    group: 'basic',
+    input: 'Morning done: water, vitamin, meditation 10 min',
+    expect: {
+      types: ['checkin'],
+      habits: { water: true, meditation: 10 },
+    },
+  },
+  {
+    name: 'realistic: forgot yesterday',
+    group: 'negation',
+    input: 'Forgot to log yesterday - water 6, no exercise',
+    expect: {
+      types: ['checkin'],
+      habits: { water: 6, exercise: { status: 'skip' } },
+    },
+  },
+  {
+    name: 'realistic: late night checkin',
+    group: 'basic',
+    input: 'Quick update before bed: drank 8 glasses, did pushups',
+    expect: {
+      types: ['checkin'],
+      habits: { water: 8 },
+    },
+  },
+  {
+    name: 'realistic: too busy',
+    group: 'negation',
+    userHabits: ['water', 'exercise', 'meditation', 'reading'],
+    input: 'crazy busy day, only got water and meditation in',
+    expect: {
+      types: ['checkin'],
+      habits: {
+        water: { status: 'full' },
+        meditation: { status: 'full' },
+      },
+    },
+  },
+  {
+    name: 'realistic: sick day',
+    group: 'edge',
+    input: 'feeling sick today, just trying to stay hydrated. water 5 glasses',
+    expect: {
+      types: ['checkin'],
+      habits: { water: 5 },
+    },
+  },
+  {
+    name: 'realistic: goal adjustment',
+    group: 'crud',
+    input: "8 glasses is too much for me, let's change it to 6",
+    expect: {
+      types: ['update_habit'],
+    },
+  },
+  {
+    name: 'realistic: motivation check',
+    group: 'basic',
+    input: 'am I making progress on my habits?',
+    expect: {
+      types: ['query'],
+    },
+  },
+  {
+    name: 'realistic: weekend lapse',
+    group: 'negation',
+    userHabits: ['water', 'exercise', 'vitamins', 'reading'],
+    input: "weekend was rough, didn't do exercise or reading",
+    expect: {
+      types: ['checkin'],
+      habits: {
+        exercise: { status: 'skip' },
+        reading: { status: 'skip' },
+      },
+    },
+  },
+  {
+    name: 'realistic: back on track',
+    group: 'context',
+    userHabits: ['water', 'exercise', 'meditation', 'journaling'],
+    input: 'Back on track today! Everything done',
+    expect: {
+      types: ['checkin'],
+    },
+  },
+  {
+    name: 'realistic: partial effort',
+    group: 'basic',
+    input: 'tried my best today: water 4/8, exercise 15 min out of 30',
+    expect: {
+      types: ['checkin'],
+      habits: {
+        water: { value: 4, status: 'partial' },
+        exercise: { value: 15, status: 'partial' },
+      },
+    },
+  },
+  {
+    name: 'realistic: new habit idea',
+    group: 'crud',
+    input: "I think I should start tracking my sleep quality too",
+    expect: {
+      types: ['add_habit'],
+      addedHabits: ['sleep'],
+    },
+  },
+  {
+    name: 'realistic: drop useless habit',
+    group: 'crud',
+    input: "that meditation thing isn't working for me, remove it",
+    expect: {
+      types: ['remove_habit'],
+      removedHabits: ['meditation'],
+    },
+  },
+  {
+    name: 'realistic: travel day',
+    group: 'edge',
+    input: 'traveling today, only managed water on the plane. 3 bottles',
+    expect: {
+      types: ['checkin'],
+      habits: { water: 3 },
+    },
+  },
+  {
+    name: 'realistic: multiple habits at once',
+    group: 'basic',
+    input: 'morning workout done: pushups 20, squats 30, plank 60 seconds',
+    expect: {
+      types: ['checkin'],
+      habits: { pushups: 20, squats: 30, plank: 60 },
+    },
+  },
+  {
+    name: 'realistic: confused about format',
+    group: 'basic',
+    input: 'not sure how to log this but I did walk for 45 minutes',
+    expect: {
+      types: ['checkin'],
+      habits: { walking: 45 },
+    },
+  },
+  {
+    name: 'realistic: enthusiastic all done',
+    group: 'context',
+    userHabits: ['water', 'exercise', 'vitamins', 'stretching'],
+    input: 'YES! Crushed all my habits today! 💪',
+    expect: {
+      types: ['checkin'],
+    },
+  },
+  {
+    name: 'realistic: simple yes no pattern',
+    group: 'negation',
+    input: 'vitamins yes, exercise no, water yes',
+    expect: {
+      types: ['checkin'],
+      habits: {
+        vitamins: { status: 'full' },
+        exercise: { status: 'skip' },
+        water: { status: 'full' },
+      },
+    },
+  },
+  {
+    name: 'realistic: comparative query',
+    group: 'basic',
+    input: 'how does this week compare to last week?',
+    expect: {
+      types: ['query'],
+    },
+  },
+  {
+    name: 'realistic: batch add',
+    group: 'crud',
+    input: 'can you add flossing, skincare, and drink tea to my habits?',
+    expect: {
+      types: ['add_habit'],
+      addedHabits: ['flossing', 'skincare', 'tea'],
     },
   },
 ];
