@@ -1,4 +1,5 @@
 import { parseIntents } from './parser.js';
+import { preParseIntent } from './pre-parser.js';
 
 // ── Test cases: input → expected intents ──
 
@@ -725,10 +726,22 @@ async function runTests(model?: string, groupFilter?: TestGroup): Promise<void> 
     process.stdout.write(`  ${test.name}... `);
 
     try {
-      const { result, latencyMs } = await parseIntents(test.input, {
-        model: modelName,
-        userHabits: test.userHabits,
-      });
+      // Try pre-parser first (mirrors production pipeline)
+      const preResult = preParseIntent(test.input);
+      let result: import('./types.js').ParseResult;
+      let latencyMs: number;
+
+      if (preResult) {
+        result = preResult;
+        latencyMs = 0;
+      } else {
+        const llmResult = await parseIntents(test.input, {
+          model: modelName,
+          userHabits: test.userHabits,
+        });
+        result = llmResult.result;
+        latencyMs = llmResult.latencyMs;
+      }
       const intents = result.intents;
 
       // Check intent types
