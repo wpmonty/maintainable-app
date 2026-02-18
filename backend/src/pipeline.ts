@@ -5,6 +5,7 @@ import { executeIntents } from './executor.js';
 import { buildStructuredContext } from './context-builder.js';
 import { generateResponse } from './response-gen.js';
 import { handleNewUserEmail, augmentFirstCheckinResponse } from './onboarding.js';
+import { preParseIntent } from './pre-parser.js';
 import type { ParsedEmail } from './email-client.js';
 
 export interface PipelineOptions {
@@ -161,11 +162,25 @@ export async function processPipelineEmail(opts: PipelineOptions): Promise<Pipel
   // Get user's active habits for parser context
   const userHabits = getUserHabits(db, userId).map(h => h.name);
 
-  // Parse intents
-  console.log('[pipeline] Parsing intents...');
-  const { result: parseResult, latencyMs: parseLatency } = await parseIntents(input, {
-    userHabits,
-  });
+  // Try fast pre-parser first
+  const preParseResult = preParseIntent(input);
+  let parseResult;
+  let parseLatency: number;
+  
+  if (preParseResult) {
+    console.log(`[pipeline] Pre-parser matched: ${preParseResult.intents.map(i => i.type).join(', ')}`);
+    parseResult = preParseResult;
+    parseLatency = 0;
+  } else {
+    // Parse intents with LLM
+    console.log('[pipeline] Parsing intents with LLM...');
+    const llmResult = await parseIntents(input, {
+      userHabits,
+    });
+    parseResult = llmResult.result;
+    parseLatency = llmResult.latencyMs;
+  }
+  
   console.log(`[pipeline] Parsed ${parseResult.intents.length} intents (${parseLatency}ms)`);
   console.log('[pipeline] Intents:', JSON.stringify(parseResult.intents, null, 2));
 
