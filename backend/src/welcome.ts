@@ -24,26 +24,18 @@ export function generateWelcomeEmail(opts: WelcomeEmailOptions): { subject: stri
   const name = opts.userName ?? 'there';
   
   return {
-    subject: 'Welcome to maintainable 👋',
-    body: `Hey ${name},
+    subject: 'Welcome to maintainable',
+    body: `Hey${name !== 'there' ? ' ' + name : ''}! Thanks for reaching out.
 
-Thanks for reaching out! I'm your habit tracking assistant.
+I'm your habit tracking assistant. Here's how it works:
 
-Here's how it works: just email me what you did today, and I'll remember it. Simple as that.
+1. Tell me what habits you want to track — just reply with something like "add stretching, add water 8 glasses, add multivitamin"
+2. Each day, I'll send you a check-in reminder. Just reply with what you did: "water 6, stretched, took vitamin"
+3. I remember everything — your streaks, your patterns, your personal bests
 
-Try something like:
-  "water 8 glasses, ran 20 min, took vitamins"
+That's it. No app, no login, just email.
 
-Or even simpler:
-  "took vitamins, meditated"
-
-I'll track it, spot patterns, and check in with you. No app to download, no streaks to stress about — just email whenever you're ready.
-
-**What habits are you working on?** Reply with your first check-in and we'll get started.
-
-No need to format anything perfectly — I understand natural language.
-
-Talk soon 🌱`,
+Reply with the habits you want to track and we'll get started.`,
   };
 }
 
