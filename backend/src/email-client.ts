@@ -167,6 +167,13 @@ export class EmailClient {
   }
 
   /**
+   * Send a fresh email (not a reply — new thread)
+   */
+  async sendFresh(to: string, subject: string, body: string): Promise<void> {
+    return this.sendReply(to, subject, body);
+  }
+
+  /**
    * Test IMAP connection
    */
   async testConnection(): Promise<boolean> {

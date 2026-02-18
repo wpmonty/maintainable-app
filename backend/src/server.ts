@@ -6,6 +6,7 @@ import { createDb } from './db.js';
 import { EmailClient } from './email-client.js';
 import { processPipelineEmail } from './pipeline.js';
 import { ProcessingQueue } from './queue.js';
+import { CheckinScheduler } from './scheduler.js';
 import type { EmailConfig } from './email-client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -190,6 +191,12 @@ emailDaemon().catch(error => {
   process.exit(1);
 });
 
+// Start daily check-in scheduler
+const scheduler = new CheckinScheduler({ db, emailClient, log });
+scheduler.start().catch(error => {
+  log('error', 'scheduler', `Fatal error: ${error.message}`, { stack: error.stack });
+});
+
 // Express HTTP server
 const app = express();
 app.use(express.json());
@@ -223,6 +230,7 @@ app.listen(PORT, () => {
 process.on('SIGINT', () => {
   log('info', 'server', 'Shutting down (SIGINT)');
   pollingActive = false;
+  scheduler.stop();
   db.close();
   process.exit(0);
 });
@@ -230,6 +238,7 @@ process.on('SIGINT', () => {
 process.on('SIGTERM', () => {
   log('info', 'server', 'Shutting down (SIGTERM)');
   pollingActive = false;
+  scheduler.stop();
   db.close();
   process.exit(0);
 });
